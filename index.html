@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Today's Fuel — Macro Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#14181c;--surface:#1c2126;--surface-2:#232a30;--line:#2c343b;
+    --text:#edeef0;--muted:#8b939b;
+    --protein:#e8a33d;--carbs:#5fb3b3;--fat:#c77b8e;
+    --over:#d96b5a;--good:#7fb069;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;display:flex;justify-content:center;padding:28px 16px 60px;}
+  .app{width:100%;max-width:480px;}
+  .top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:22px;}
+  .top h1{font-family:'Space Grotesk',sans-serif;font-size:15px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);font-weight:600;margin:0;}
+  .date{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);}
+  .reset-btn{background:none;border:1px solid var(--line);color:var(--muted);font-family:'Inter',sans-serif;font-size:12px;padding:5px 10px;border-radius:6px;cursor:pointer;}
+  .reset-btn:hover{color:var(--over);border-color:var(--over);}
+  .hero{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px;display:flex;align-items:center;gap:22px;margin-bottom:18px;}
+  .ring-wrap{position:relative;width:104px;height:104px;flex-shrink:0;}
+  .ring-wrap svg{transform:rotate(-90deg);}
+  .ring-bg{fill:none;stroke:var(--surface-2);stroke-width:9;}
+  .ring-fg{fill:none;stroke:var(--good);stroke-width:9;stroke-linecap:round;transition:stroke-dashoffset .5s ease,stroke .3s ease;}
+  .ring-center{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .ring-center .kcal{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:600;line-height:1;}
+  .ring-center .lbl{font-size:10px;color:var(--muted);margin-top:3px;letter-spacing:0.04em;}
+  .hero-meta{flex:1;}
+  .hero-meta .big{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;margin-bottom:4px;}
+  .hero-meta .sub{font-size:12.5px;color:var(--muted);line-height:1.5;}
+  .hero-meta .sub b{color:var(--text);font-weight:500;}
+  .macros{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 20px 20px;margin-bottom:18px;}
+  .macro-row{margin-bottom:16px;}
+  .macro-row:last-child{margin-bottom:0;}
+  .macro-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;}
+  .macro-name{font-family:'Space Grotesk',sans-serif;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;}
+  .macro-nums{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--muted);}
+  .macro-nums b{color:var(--text);}
+  .bar-track{height:8px;border-radius:5px;background:var(--surface-2);overflow:hidden;}
+  .bar-fill{height:100%;border-radius:5px;transition:width .4s ease;}
+  .log-input{display:flex;gap:8px;margin-bottom:18px;}
+  .log-input input{flex:1;background:var(--surface);border:1px solid var(--line);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;padding:12px 14px;border-radius:10px;outline:none;}
+  .log-input input::placeholder{color:var(--muted);}
+  .log-input input:focus{border-color:var(--protein);}
+  .log-input button{background:var(--protein);color:#1c1500;border:none;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13.5px;padding:0 18px;border-radius:10px;cursor:pointer;white-space:nowrap;}
+  .log-input button:disabled{opacity:0.5;cursor:default;}
+  .log-input button:hover:not(:disabled){background:#f0b355;}
+  .feed{display:flex;flex-direction:column;gap:8px;}
+  .entry{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;}
+  .entry-time{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);width:42px;flex-shrink:0;}
+  .entry-body{flex:1;min-width:0;}
+  .entry-name{font-size:13.5px;margin-bottom:3px;}
+  .entry-macros{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);}
+  .entry-macros span{margin-right:8px;}
+  .entry-macros .p{color:var(--protein);}
+  .entry-macros .c{color:var(--carbs);}
+  .entry-macros .f{color:var(--fat);}
+  .entry-kcal{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;flex-shrink:0;}
+  .entry-del{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:2px 4px;flex-shrink:0;line-height:1;}
+  .entry-del:hover{color:var(--over);}
+  .empty{text-align:center;color:var(--muted);font-size:13px;padding:30px 10px;border:1px dashed var(--line);border-radius:12px;}
+  .loading-entry{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:8px;}
+  .spinner{width:12px;height:12px;border:2px solid var(--line);border-top-color:var(--protein);border-radius:50%;animation:spin .7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .error-box{background:rgba(217,107,90,0.1);border:1px solid var(--over);color:#f0a396;border-radius:10px;padding:10px 14px;font-size:12.5px;margin-bottom:14px;}
+  .targets-toggle{text-align:center;margin-top:22px;}
+  .targets-toggle button{background:none;border:none;color:var(--muted);font-size:11.5px;text-decoration:underline;cursor:pointer;font-family:'Inter',sans-serif;}
+  .targets-panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:10px;display:none;gap:10px;grid-template-columns:1fr 1fr;}
+  .targets-panel.open{display:grid;}
+  .targets-panel label{font-size:11px;color:var(--muted);display:block;margin-bottom:4px;}
+  .targets-panel input{width:100%;background:var(--surface-2);border:1px solid var(--line);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;padding:7px 8px;border-radius:6px;}
+  .targets-panel .save-targets{grid-column:1/-1;background:var(--protein);border:none;color:#1c1500;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:12.5px;padding:8px;border-radius:6px;cursor:pointer;margin-top:4px;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div>
+      <h1>Today's Fuel</h1>
+      <div class="date" id="dateLabel"></div>
+    </div>
+    <button class="reset-btn" id="resetBtn">Reset day</button>
+  </div>
+  <div id="errorSlot"></div>
+  <div class="hero">
+    <div class="ring-wrap">
+      <svg width="104" height="104">
+        <circle class="ring-bg" cx="52" cy="52" r="44"></circle>
+        <circle class="ring-fg" id="ringFg" cx="52" cy="52" r="44" stroke-dasharray="276.5" stroke-dashoffset="276.5"></circle>
+      </svg>
+      <div class="ring-center">
+        <div class="kcal" id="kcalNow">0</div>
+        <div class="lbl">kcal</div>
+      </div>
+    </div>
+    <div class="hero-meta">
+      <div class="big" id="kcalHeadline">0 of 2,100 kcal</div>
+      <div class="sub" id="kcalSub">Log your first meal to start tracking.</div>
+    </div>
+  </div>
+  <div class="macros">
+    <div class="macro-row">
+      <div class="macro-top">
+        <span class="macro-name" style="color:var(--protein)">Protein</span>
+        <span class="macro-nums"><b id="proteinNow">0</b> / <span id="proteinTarget">130</span>g</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" id="proteinBar" style="width:0%;background:var(--protein)"></div></div>
+    </div>
+    <div class="macro-row">
+      <div class="macro-top">
+        <span class="macro-name" style="color:var(--carbs)">Carbs</span>
+        <span class="macro-nums"><b id="carbsNow">0</b> / <span id="carbsTarget">280</span>g</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" id="carbsBar" style="width:0%;background:var(--carbs)"></div></div>
+    </div>
+    <div class="macro-row">
+      <div class="macro-top">
+        <span class="macro-name" style="color:var(--fat)">Fat</span>
+        <span class="macro-nums"><b id="fatNow">0</b> / <span id="fatTarget">51</span>g</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" id="fatBar" style="width:0%;background:var(--fat)"></div></div>
+    </div>
+  </div>
+  <div class="log-input">
+    <input type="text" id="foodInput" placeholder="e.g. 2 rotis, dal, 150g chicken breast" />
+    <button id="logBtn">Log</button>
+  </div>
+  <div class="feed" id="feed">
+    <div class="empty" id="emptyState">Nothing logged yet — add your first meal above.</div>
+  </div>
+  <div class="targets-toggle">
+    <button id="targetsToggle">Edit daily targets</button>
+    <div class="targets-panel" id="targetsPanel">
+      <div><label>Calories</label><input type="number" id="tKcal" value="2100" /></div>
+      <div><label>Protein (g)</label><input type="number" id="tProtein" value="130" /></div>
+      <div><label>Carbs (g)</label><input type="number" id="tCarbs" value="280" /></div>
+      <div><label>Fat (g)</label><input type="number" id="tFat" value="51" /></div>
+      <button class="save-targets" id="saveTargets">Save targets</button>
+    </div>
+  </div>
+</div>
+<script>
+const RING_CIRC = 276.5;
+
+function todayKey(){ return new Date().toISOString().slice(0,10); }
+
+let targets = { kcal:2100, protein:130, carbs:280, fat:51 };
+let entries = [];
+
+const el = id => document.getElementById(id);
+
+function fmtTime(iso){
+  return new Date(iso).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false});
+}
+
+function totals(){
+  return entries.reduce((a,e)=>({
+    kcal:a.kcal+e.calories, protein:a.protein+e.protein,
+    carbs:a.carbs+e.carbs, fat:a.fat+e.fat
+  }),{kcal:0,protein:0,carbs:0,fat:0});
+}
+
+function render(){
+  const t = totals();
+  el('kcalNow').textContent = Math.round(t.kcal);
+  el('kcalHeadline').textContent = `${Math.round(t.kcal).toLocaleString()} of ${targets.kcal.toLocaleString()} kcal`;
+  const pct = Math.min(t.kcal/targets.kcal,1);
+  const ring = el('ringFg');
+  ring.style.strokeDashoffset = RING_CIRC - RING_CIRC*pct;
+  ring.style.stroke = t.kcal > targets.kcal ? 'var(--over)' : 'var(--good)';
+  const rem = targets.kcal - t.kcal;
+  el('kcalSub').innerHTML = entries.length===0
+    ? 'Log your first meal to start tracking.'
+    : (rem>=0 ? `<b>${Math.round(rem).toLocaleString()}</b> kcal left today`
+               : `<b>${Math.round(-rem).toLocaleString()}</b> kcal over target`);
+  setMacro('protein',t.protein,targets.protein);
+  setMacro('carbs',t.carbs,targets.carbs);
+  setMacro('fat',t.fat,targets.fat);
+  el('proteinTarget').textContent=targets.protein;
+  el('carbsTarget').textContent=targets.carbs;
+  el('fatTarget').textContent=targets.fat;
+  renderFeed();
+}
+
+function setMacro(name,now,target){
+  el(name+'Now').textContent=Math.round(now);
+  el(name+'Bar').style.width=Math.min((now/target)*100,100)+'%';
+  el(name+'Bar').style.background=now>target?'var(--over)':`var(--${name})`;
+}
+
+function renderFeed(){
+  el('feed').querySelectorAll('.entry').forEach(n=>n.remove());
+  el('emptyState').style.display=entries.length===0?'block':'none';
+  [...entries].sort((a,b)=>new Date(b.loggedAt)-new Date(a.loggedAt)).forEach(e=>{
+    const div=document.createElement('div');
+    div.className='entry';
+    div.innerHTML=`
+      <div class="entry-time">${fmtTime(e.loggedAt)}</div>
+      <div class="entry-body">
+        <div class="entry-name">${escHtml(e.name)}</div>
+        <div class="entry-macros">
+          <span class="p">P ${Math.round(e.protein)}g</span>
+          <span class="c">C ${Math.round(e.carbs)}g</span>
+          <span class="f">F ${Math.round(e.fat)}g</span>
+        </div>
+      </div>
+      <div class="entry-kcal">${Math.round(e.calories)}</div>
+      <button class="entry-del" data-id="${e.id}">×</button>`;
+    el('feed').appendChild(div);
+  });
+  el('feed').querySelectorAll('.entry-del').forEach(b=>{
+    b.addEventListener('click',()=>removeEntry(b.dataset.id));
+  });
+}
+
+function escHtml(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+
+function showError(msg){
+  el('errorSlot').innerHTML=`<div class="error-box">${escHtml(msg)}</div>`;
+  setTimeout(()=>{el('errorSlot').innerHTML='';},6000);
+}
+
+function save(){
+  localStorage.setItem('macro-log-'+todayKey(),JSON.stringify(entries));
+}
+
+function load(){
+  try{
+    const raw=localStorage.getItem('macro-log-'+todayKey());
+    entries=raw?JSON.parse(raw):[];
+  }catch{entries=[];}
+  try{
+    const t=localStorage.getItem('macro-targets');
+    if(t){
+      targets=JSON.parse(t);
+      el('tKcal').value=targets.kcal;
+      el('tProtein').value=targets.protein;
+      el('tCarbs').value=targets.carbs;
+      el('tFat').value=targets.fat;
+    }
+  }catch{}
+  render();
+}
+
+function removeEntry(id){
+  entries=entries.filter(e=>e.id!==id);
+  save(); render();
+}
+
+async function estimateMacros(desc){
+  const res=await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      model:"claude-sonnet-4-6",max_tokens:1000,
+      system:"You are a nutrition estimation engine. Respond with ONLY a raw JSON object — no markdown, no preamble. Format: {\"name\":\"short label\",\"calories\":number,\"protein\":number,\"carbs\":number,\"fat\":number}. Use kcal for calories, grams for macros. Assume typical Indian home-cooked portions unless quantities are given.",
+      messages:[{role:"user",content:desc}]
+    })
+  });
+  const data=await res.json();
+  const block=(data.content||[]).find(b=>b.type==='text');
+  if(!block) throw new Error('No response');
+  const parsed=JSON.parse(block.text.replace(/```json|```/g,'').trim());
+  if(typeof parsed.calories!=='number') throw new Error('Bad format');
+  return parsed;
+}
+
+async function handleLog(){
+  const input=el('foodInput');
+  const desc=input.value.trim();
+  if(!desc)return;
+  const btn=el('logBtn');
+  btn.disabled=true; input.disabled=true;
+  const loader=document.createElement('div');
+  loader.className='loading-entry';
+  loader.innerHTML=`<div class="spinner"></div> Estimating macros…`;
+  el('emptyState').style.display='none';
+  el('feed').prepend(loader);
+  try{
+    const est=await estimateMacros(desc);
+    entries.push({
+      id:'e'+Date.now()+Math.random().toString(36).slice(2,6),
+      name:est.name||desc,
+      calories:est.calories,protein:est.protein||0,
+      carbs:est.carbs||0,fat:est.fat||0,
+      loggedAt:new Date().toISOString()
+    });
+    save(); input.value=''; render();
+  }catch(err){
+    showError("Couldn't estimate that — try being more specific, e.g. '2 boiled eggs, 1 cup rice'.");
+    render();
+  }finally{
+    loader.remove(); btn.disabled=false; input.disabled=false; input.focus();
+  }
+}
+
+el('logBtn').addEventListener('click',handleLog);
+el('foodInput').addEventListener('keydown',e=>{if(e.key==='Enter')handleLog();});
+el('resetBtn').addEventListener('click',()=>{
+  if(confirm("Reset today's log?")){ entries=[]; save(); render(); }
+});
+el('targetsToggle').addEventListener('click',()=>el('targetsPanel').classList.toggle('open'));
+el('saveTargets').addEventListener('click',()=>{
+  targets={
+    kcal:Number(el('tKcal').value)||2100,
+    protein:Number(el('tProtein').value)||130,
+    carbs:Number(el('tCarbs').value)||280,
+    fat:Number(el('tFat').value)||51
+  };
+  localStorage.setItem('macro-targets',JSON.stringify(targets));
+  render(); el('targetsPanel').classList.remove('open');
+});
+
+el('dateLabel').textContent=new Date().toLocaleDateString([],{weekday:'long',month:'short',day:'numeric'});
+load();
+</script>
+</body>
+</html>
