@@ -19,8 +19,10 @@
   .top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:22px;}
   .top h1{font-family:'Space Grotesk',sans-serif;font-size:15px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);font-weight:600;margin:0;}
   .date{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);}
-  .reset-btn{background:none;border:1px solid var(--line);color:var(--muted);font-family:'Inter',sans-serif;font-size:12px;padding:5px 10px;border-radius:6px;cursor:pointer;}
+  .top-actions{display:flex;gap:8px;align-items:center;}
+  .reset-btn,.key-btn{background:none;border:1px solid var(--line);color:var(--muted);font-family:'Inter',sans-serif;font-size:12px;padding:5px 10px;border-radius:6px;cursor:pointer;}
   .reset-btn:hover{color:var(--over);border-color:var(--over);}
+  .key-btn:hover{color:var(--protein);border-color:var(--protein);}
   .hero{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px;display:flex;align-items:center;gap:22px;margin-bottom:18px;}
   .ring-wrap{position:relative;width:104px;height:104px;flex-shrink:0;}
   .ring-wrap svg{transform:rotate(-90deg);}
@@ -74,16 +76,49 @@
   .targets-panel label{font-size:11px;color:var(--muted);display:block;margin-bottom:4px;}
   .targets-panel input{width:100%;background:var(--surface-2);border:1px solid var(--line);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;padding:7px 8px;border-radius:6px;}
   .targets-panel .save-targets{grid-column:1/-1;background:var(--protein);border:none;color:#1c1500;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:12.5px;padding:8px;border-radius:6px;cursor:pointer;margin-top:4px;}
+
+  /* API Key Modal */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px;}
+  .modal-overlay.hidden{display:none;}
+  .modal{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:28px;width:100%;max-width:400px;}
+  .modal h2{font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:600;margin:0 0 8px;}
+  .modal p{font-size:13px;color:var(--muted);line-height:1.6;margin:0 0 18px;}
+  .modal p a{color:var(--protein);text-decoration:none;}
+  .modal input{width:100%;background:var(--surface-2);border:1px solid var(--line);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;padding:11px 12px;border-radius:8px;outline:none;margin-bottom:12px;}
+  .modal input:focus{border-color:var(--protein);}
+  .modal-actions{display:flex;gap:8px;}
+  .modal-save{flex:1;background:var(--protein);color:#1c1500;border:none;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13.5px;padding:10px;border-radius:8px;cursor:pointer;}
+  .modal-save:hover{background:#f0b355;}
+  .modal-cancel{background:none;border:1px solid var(--line);color:var(--muted);font-family:'Inter',sans-serif;font-size:13px;padding:10px 16px;border-radius:8px;cursor:pointer;}
+  .modal-note{font-size:11px;color:var(--muted);margin-top:12px;margin-bottom:0;line-height:1.5;}
 </style>
 </head>
 <body>
+
+<!-- API Key Modal -->
+<div class="modal-overlay" id="keyModal">
+  <div class="modal">
+    <h2>Enter your API key</h2>
+    <p>This tracker uses Claude to estimate macros. Grab your key from <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a> and paste it below.</p>
+    <input type="password" id="keyInput" placeholder="sk-ant-..." />
+    <div class="modal-actions">
+      <button class="modal-save" id="keySave">Save & continue</button>
+      <button class="modal-cancel" id="keyCancel">Cancel</button>
+    </div>
+    <p class="modal-note">🔒 Stored only in your browser's localStorage — never sent anywhere except the Anthropic API.</p>
+  </div>
+</div>
+
 <div class="app">
   <div class="top">
     <div>
       <h1>Today's Fuel</h1>
       <div class="date" id="dateLabel"></div>
     </div>
-    <button class="reset-btn" id="resetBtn">Reset day</button>
+    <div class="top-actions">
+      <button class="key-btn" id="keyBtn">API key</button>
+      <button class="reset-btn" id="resetBtn">Reset day</button>
+    </div>
   </div>
   <div id="errorSlot"></div>
   <div class="hero">
@@ -143,40 +178,49 @@
     </div>
   </div>
 </div>
+
 <script>
 const RING_CIRC = 276.5;
-
 function todayKey(){ return new Date().toISOString().slice(0,10); }
 
 let targets = { kcal:2100, protein:130, carbs:280, fat:51 };
 let entries = [];
-
 const el = id => document.getElementById(id);
 
-function fmtTime(iso){
-  return new Date(iso).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false});
-}
+/* ── API Key Modal ── */
+function getKey(){ return localStorage.getItem('anthropic-api-key') || ''; }
+function setKey(k){ localStorage.setItem('anthropic-api-key', k.trim()); }
+function showKeyModal(){ el('keyModal').classList.remove('hidden'); el('keyInput').value=getKey(); el('keyInput').focus(); }
+function hideKeyModal(){ el('keyModal').classList.add('hidden'); }
 
-function totals(){
-  return entries.reduce((a,e)=>({
-    kcal:a.kcal+e.calories, protein:a.protein+e.protein,
-    carbs:a.carbs+e.carbs, fat:a.fat+e.fat
-  }),{kcal:0,protein:0,carbs:0,fat:0});
-}
+el('keySave').addEventListener('click', ()=>{
+  const k = el('keyInput').value.trim();
+  if(!k){ alert('Please enter a key.'); return; }
+  setKey(k); hideKeyModal();
+});
+el('keyCancel').addEventListener('click', hideKeyModal);
+el('keyBtn').addEventListener('click', showKeyModal);
+el('keyInput').addEventListener('keydown', e=>{ if(e.key==='Enter') el('keySave').click(); });
 
+if(!getKey()) showKeyModal();
+
+/* ── Utils ── */
+function fmtTime(iso){ return new Date(iso).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false}); }
+function totals(){ return entries.reduce((a,e)=>({kcal:a.kcal+e.calories,protein:a.protein+e.protein,carbs:a.carbs+e.carbs,fat:a.fat+e.fat}),{kcal:0,protein:0,carbs:0,fat:0}); }
+function escHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+/* ── Render ── */
 function render(){
-  const t = totals();
-  el('kcalNow').textContent = Math.round(t.kcal);
-  el('kcalHeadline').textContent = `${Math.round(t.kcal).toLocaleString()} of ${targets.kcal.toLocaleString()} kcal`;
-  const pct = Math.min(t.kcal/targets.kcal,1);
-  const ring = el('ringFg');
-  ring.style.strokeDashoffset = RING_CIRC - RING_CIRC*pct;
-  ring.style.stroke = t.kcal > targets.kcal ? 'var(--over)' : 'var(--good)';
-  const rem = targets.kcal - t.kcal;
-  el('kcalSub').innerHTML = entries.length===0
-    ? 'Log your first meal to start tracking.'
-    : (rem>=0 ? `<b>${Math.round(rem).toLocaleString()}</b> kcal left today`
-               : `<b>${Math.round(-rem).toLocaleString()}</b> kcal over target`);
+  const t=totals();
+  el('kcalNow').textContent=Math.round(t.kcal);
+  el('kcalHeadline').textContent=`${Math.round(t.kcal).toLocaleString()} of ${targets.kcal.toLocaleString()} kcal`;
+  const pct=Math.min(t.kcal/targets.kcal,1);
+  const ring=el('ringFg');
+  ring.style.strokeDashoffset=RING_CIRC-RING_CIRC*pct;
+  ring.style.stroke=t.kcal>targets.kcal?'var(--over)':'var(--good)';
+  const rem=targets.kcal-t.kcal;
+  el('kcalSub').innerHTML=entries.length===0?'Log your first meal to start tracking.'
+    :(rem>=0?`<b>${Math.round(rem).toLocaleString()}</b> kcal left today`:`<b>${Math.round(-rem).toLocaleString()}</b> kcal over target`);
   setMacro('protein',t.protein,targets.protein);
   setMacro('carbs',t.carbs,targets.carbs);
   setMacro('fat',t.fat,targets.fat);
@@ -217,62 +261,54 @@ function renderFeed(){
   });
 }
 
-function escHtml(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
-
-function showError(msg){
-  el('errorSlot').innerHTML=`<div class="error-box">${escHtml(msg)}</div>`;
-  setTimeout(()=>{el('errorSlot').innerHTML='';},6000);
-}
-
-function save(){
-  localStorage.setItem('macro-log-'+todayKey(),JSON.stringify(entries));
-}
-
+/* ── Storage ── */
+function save(){ localStorage.setItem('macro-log-'+todayKey(),JSON.stringify(entries)); }
 function load(){
-  try{
-    const raw=localStorage.getItem('macro-log-'+todayKey());
-    entries=raw?JSON.parse(raw):[];
-  }catch{entries=[];}
-  try{
-    const t=localStorage.getItem('macro-targets');
-    if(t){
-      targets=JSON.parse(t);
-      el('tKcal').value=targets.kcal;
-      el('tProtein').value=targets.protein;
-      el('tCarbs').value=targets.carbs;
-      el('tFat').value=targets.fat;
-    }
-  }catch{}
+  try{ const r=localStorage.getItem('macro-log-'+todayKey()); entries=r?JSON.parse(r):[]; }catch{ entries=[]; }
+  try{ const t=localStorage.getItem('macro-targets'); if(t){ targets=JSON.parse(t); el('tKcal').value=targets.kcal; el('tProtein').value=targets.protein; el('tCarbs').value=targets.carbs; el('tFat').value=targets.fat; } }catch{}
   render();
 }
+function removeEntry(id){ entries=entries.filter(e=>e.id!==id); save(); render(); }
 
-function removeEntry(id){
-  entries=entries.filter(e=>e.id!==id);
-  save(); render();
-}
+/* ── API ── */
+function showError(msg){ el('errorSlot').innerHTML=`<div class="error-box">${escHtml(msg)}</div>`; setTimeout(()=>{ el('errorSlot').innerHTML=''; },7000); }
 
 async function estimateMacros(desc){
+  const key=getKey();
+  if(!key){ showKeyModal(); throw new Error('No API key'); }
   const res=await fetch("https://api.anthropic.com/v1/messages",{
     method:"POST",
-    headers:{"Content-Type":"application/json"},
+    headers:{
+      "Content-Type":"application/json",
+      "x-api-key": key,
+      "anthropic-version":"2023-06-01",
+      "anthropic-dangerous-direct-browser-access":"true"
+    },
     body:JSON.stringify({
-      model:"claude-sonnet-4-6",max_tokens:1000,
-      system:"You are a nutrition estimation engine. Respond with ONLY a raw JSON object — no markdown, no preamble. Format: {\"name\":\"short label\",\"calories\":number,\"protein\":number,\"carbs\":number,\"fat\":number}. Use kcal for calories, grams for macros. Assume typical Indian home-cooked portions unless quantities are given.",
+      model:"claude-haiku-4-5-20251001",max_tokens:512,
+      system:"You are a nutrition estimation engine. Respond with ONLY a raw JSON object — no markdown, no preamble, no explanation. Format exactly: {\"name\":\"short clean label\",\"calories\":number,\"protein\":number,\"carbs\":number,\"fat\":number}. Use kcal for calories, grams for macros. Assume typical Indian home-cooked portions unless quantities are stated.",
       messages:[{role:"user",content:desc}]
     })
   });
+  if(!res.ok){
+    const err=await res.json().catch(()=>({}));
+    if(res.status===401){ showKeyModal(); throw new Error('Invalid API key'); }
+    throw new Error(err.error?.message||`API error ${res.status}`);
+  }
   const data=await res.json();
   const block=(data.content||[]).find(b=>b.type==='text');
-  if(!block) throw new Error('No response');
+  if(!block) throw new Error('Empty response');
   const parsed=JSON.parse(block.text.replace(/```json|```/g,'').trim());
   if(typeof parsed.calories!=='number') throw new Error('Bad format');
   return parsed;
 }
 
+/* ── Log handler ── */
 async function handleLog(){
   const input=el('foodInput');
   const desc=input.value.trim();
   if(!desc)return;
+  if(!getKey()){ showKeyModal(); return; }
   const btn=el('logBtn');
   btn.disabled=true; input.disabled=true;
   const loader=document.createElement('div');
@@ -291,26 +327,21 @@ async function handleLog(){
     });
     save(); input.value=''; render();
   }catch(err){
-    showError("Couldn't estimate that — try being more specific, e.g. '2 boiled eggs, 1 cup rice'.");
+    if(err.message!=='No API key'&&err.message!=='Invalid API key')
+      showError(`Couldn't estimate: ${err.message}. Try being more specific, e.g. "2 boiled eggs, 1 cup cooked rice".`);
     render();
   }finally{
     loader.remove(); btn.disabled=false; input.disabled=false; input.focus();
   }
 }
 
+/* ── Events ── */
 el('logBtn').addEventListener('click',handleLog);
 el('foodInput').addEventListener('keydown',e=>{if(e.key==='Enter')handleLog();});
-el('resetBtn').addEventListener('click',()=>{
-  if(confirm("Reset today's log?")){ entries=[]; save(); render(); }
-});
+el('resetBtn').addEventListener('click',()=>{ if(confirm("Reset today's log?")){ entries=[]; save(); render(); } });
 el('targetsToggle').addEventListener('click',()=>el('targetsPanel').classList.toggle('open'));
 el('saveTargets').addEventListener('click',()=>{
-  targets={
-    kcal:Number(el('tKcal').value)||2100,
-    protein:Number(el('tProtein').value)||130,
-    carbs:Number(el('tCarbs').value)||280,
-    fat:Number(el('tFat').value)||51
-  };
+  targets={kcal:Number(el('tKcal').value)||2100,protein:Number(el('tProtein').value)||130,carbs:Number(el('tCarbs').value)||280,fat:Number(el('tFat').value)||51};
   localStorage.setItem('macro-targets',JSON.stringify(targets));
   render(); el('targetsPanel').classList.remove('open');
 });
