@@ -1,111 +1,124 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Today's Fuel — Macro Tracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg:#14181c;--surface:#1c2126;--surface-2:#232a30;--line:#2c343b;
-    --text:#edeef0;--muted:#8b939b;
-    --protein:#e8a33d;--carbs:#5fb3b3;--fat:#c77b8e;
-    --over:#d96b5a;--good:#7fb069;
-  }
-  *{box-sizing:border-box;}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;display:flex;justify-content:center;padding:28px 16px 60px;}
-  .app{width:100%;max-width:480px;}
-  .top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:22px;}
-  .top h1{font-family:'Space Grotesk',sans-serif;font-size:15px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);font-weight:600;margin:0;}
-  .date{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);}
-  .top-actions{display:flex;gap:8px;align-items:center;}
-  .reset-btn,.key-btn{background:none;border:1px solid var(--line);color:var(--muted);font-family:'Inter',sans-serif;font-size:12px;padding:5px 10px;border-radius:6px;cursor:pointer;}
-  .reset-btn:hover{color:var(--over);border-color:var(--over);}
-  .key-btn:hover{color:var(--protein);border-color:var(--protein);}
-  .hero{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px;display:flex;align-items:center;gap:22px;margin-bottom:18px;}
-  .ring-wrap{position:relative;width:104px;height:104px;flex-shrink:0;}
-  .ring-wrap svg{transform:rotate(-90deg);}
-  .ring-bg{fill:none;stroke:var(--surface-2);stroke-width:9;}
-  .ring-fg{fill:none;stroke:var(--good);stroke-width:9;stroke-linecap:round;transition:stroke-dashoffset .5s ease,stroke .3s ease;}
-  .ring-center{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;}
-  .ring-center .kcal{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:600;line-height:1;}
-  .ring-center .lbl{font-size:10px;color:var(--muted);margin-top:3px;letter-spacing:0.04em;}
-  .hero-meta{flex:1;}
-  .hero-meta .big{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;margin-bottom:4px;}
-  .hero-meta .sub{font-size:12.5px;color:var(--muted);line-height:1.5;}
-  .hero-meta .sub b{color:var(--text);font-weight:500;}
-  .macros{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 20px 20px;margin-bottom:18px;}
-  .macro-row{margin-bottom:16px;}
-  .macro-row:last-child{margin-bottom:0;}
-  .macro-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;}
-  .macro-name{font-family:'Space Grotesk',sans-serif;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;}
-  .macro-nums{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--muted);}
-  .macro-nums b{color:var(--text);}
-  .bar-track{height:8px;border-radius:5px;background:var(--surface-2);overflow:hidden;}
-  .bar-fill{height:100%;border-radius:5px;transition:width .4s ease;}
-  .log-input{display:flex;gap:8px;margin-bottom:18px;}
-  .log-input input{flex:1;background:var(--surface);border:1px solid var(--line);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;padding:12px 14px;border-radius:10px;outline:none;}
-  .log-input input::placeholder{color:var(--muted);}
-  .log-input input:focus{border-color:var(--protein);}
-  .log-input button{background:var(--protein);color:#1c1500;border:none;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13.5px;padding:0 18px;border-radius:10px;cursor:pointer;white-space:nowrap;}
-  .log-input button:disabled{opacity:0.5;cursor:default;}
-  .log-input button:hover:not(:disabled){background:#f0b355;}
-  .feed{display:flex;flex-direction:column;gap:8px;}
-  .entry{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;}
-  .entry-time{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);width:42px;flex-shrink:0;}
-  .entry-body{flex:1;min-width:0;}
-  .entry-name{font-size:13.5px;margin-bottom:3px;}
-  .entry-macros{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);}
-  .entry-macros span{margin-right:8px;}
-  .entry-macros .p{color:var(--protein);}
-  .entry-macros .c{color:var(--carbs);}
-  .entry-macros .f{color:var(--fat);}
-  .entry-kcal{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;flex-shrink:0;}
-  .entry-del{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:2px 4px;flex-shrink:0;line-height:1;}
-  .entry-del:hover{color:var(--over);}
-  .empty{text-align:center;color:var(--muted);font-size:13px;padding:30px 10px;border:1px dashed var(--line);border-radius:12px;}
-  .loading-entry{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:8px;}
-  .spinner{width:12px;height:12px;border:2px solid var(--line);border-top-color:var(--protein);border-radius:50%;animation:spin .7s linear infinite;}
-  @keyframes spin{to{transform:rotate(360deg);}}
-  .error-box{background:rgba(217,107,90,0.1);border:1px solid var(--over);color:#f0a396;border-radius:10px;padding:10px 14px;font-size:12.5px;margin-bottom:14px;}
-  .targets-toggle{text-align:center;margin-top:22px;}
-  .targets-toggle button{background:none;border:none;color:var(--muted);font-size:11.5px;text-decoration:underline;cursor:pointer;font-family:'Inter',sans-serif;}
-  .targets-panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:10px;display:none;gap:10px;grid-template-columns:1fr 1fr;}
-  .targets-panel.open{display:grid;}
-  .targets-panel label{font-size:11px;color:var(--muted);display:block;margin-bottom:4px;}
-  .targets-panel input{width:100%;background:var(--surface-2);border:1px solid var(--line);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;padding:7px 8px;border-radius:6px;}
-  .targets-panel .save-targets{grid-column:1/-1;background:var(--protein);border:none;color:#1c1500;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:12.5px;padding:8px;border-radius:6px;cursor:pointer;margin-top:4px;}
-
-  /* API Key Modal */
-  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px;}
-  .modal-overlay.hidden{display:none;}
-  .modal{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:28px;width:100%;max-width:400px;}
-  .modal h2{font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:600;margin:0 0 8px;}
-  .modal p{font-size:13px;color:var(--muted);line-height:1.6;margin:0 0 18px;}
-  .modal p a{color:var(--protein);text-decoration:none;}
-  .modal input{width:100%;background:var(--surface-2);border:1px solid var(--line);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;padding:11px 12px;border-radius:8px;outline:none;margin-bottom:12px;}
-  .modal input:focus{border-color:var(--protein);}
-  .modal-actions{display:flex;gap:8px;}
-  .modal-save{flex:1;background:var(--protein);color:#1c1500;border:none;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13.5px;padding:10px;border-radius:8px;cursor:pointer;}
-  .modal-save:hover{background:#f0b355;}
-  .modal-cancel{background:none;border:1px solid var(--line);color:var(--muted);font-family:'Inter',sans-serif;font-size:13px;padding:10px 16px;border-radius:8px;cursor:pointer;}
-  .modal-note{font-size:11px;color:var(--muted);margin-top:12px;margin-bottom:0;line-height:1.5;}
+:root{--bg:#14181c;--surface:#1c2126;--surface-2:#232a30;--line:#2c343b;--text:#edeef0;--muted:#8b939b;--protein:#e8a33d;--carbs:#5fb3b3;--fat:#c77b8e;--over:#d96b5a;--good:#7fb069;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;display:flex;justify-content:center;padding:28px 16px 80px;}
+.app{width:100%;max-width:480px;}
+.top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px;}
+.top h1{font-family:'Space Grotesk',sans-serif;font-size:15px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600;}
+.date{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);margin-top:2px;}
+.top-actions{display:flex;gap:8px;align-items:center;}
+.btn-sm{background:none;border:1px solid var(--line);color:var(--muted);font-family:'Inter',sans-serif;font-size:12px;padding:5px 10px;border-radius:6px;cursor:pointer;white-space:nowrap;}
+.btn-sm:hover{color:var(--text);border-color:var(--text);}
+.hero{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px;display:flex;align-items:center;gap:22px;margin-bottom:18px;}
+.ring-wrap{position:relative;width:104px;height:104px;flex-shrink:0;}
+.ring-wrap svg{transform:rotate(-90deg);}
+.ring-bg{fill:none;stroke:var(--surface-2);stroke-width:9;}
+.ring-fg{fill:none;stroke:var(--good);stroke-width:9;stroke-linecap:round;transition:stroke-dashoffset .5s,stroke .3s;}
+.ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.ring-center .kcal-num{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:600;line-height:1;}
+.ring-center .lbl{font-size:10px;color:var(--muted);margin-top:3px;letter-spacing:.04em;}
+.hero-meta .big{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;margin-bottom:4px;}
+.hero-meta .sub{font-size:12.5px;color:var(--muted);line-height:1.6;}
+.hero-meta .sub b{color:var(--text);font-weight:500;}
+.macros{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 20px 20px;margin-bottom:18px;}
+.macro-row{margin-bottom:14px;}
+.macro-row:last-child{margin-bottom:0;}
+.macro-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;}
+.macro-name{font-family:'Space Grotesk',sans-serif;font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;}
+.macro-nums{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--muted);}
+.macro-nums b{color:var(--text);}
+.bar-track{height:8px;border-radius:5px;background:var(--surface-2);overflow:hidden;}
+.bar-fill{height:100%;border-radius:5px;transition:width .4s;}
+.log-area{margin-bottom:18px;}
+.log-row{display:flex;gap:8px;margin-bottom:8px;}
+.log-row input{flex:1;background:var(--surface);border:1px solid var(--line);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;padding:12px 14px;border-radius:10px;outline:none;}
+.log-row input::placeholder{color:var(--muted);}
+.log-row input:focus{border-color:var(--protein);}
+.log-row .log-btn{background:var(--protein);color:#1c1500;border:none;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13.5px;padding:0 18px;border-radius:10px;cursor:pointer;white-space:nowrap;}
+.log-row .log-btn:disabled{opacity:.5;cursor:default;}
+.log-row .log-btn:hover:not(:disabled){background:#f0b355;}
+.hint{font-size:11.5px;color:var(--muted);line-height:1.5;padding-left:2px;}
+.hint span{font-family:'JetBrains Mono',monospace;font-size:10.5px;background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--carbs);}
+.feed{display:flex;flex-direction:column;gap:8px;}
+.entry{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;}
+.entry-time{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);width:42px;flex-shrink:0;}
+.entry-body{flex:1;min-width:0;}
+.entry-name{font-size:13.5px;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.entry-macros{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);}
+.entry-macros span{margin-right:8px;}
+.entry-macros .p{color:var(--protein);}
+.entry-macros .c{color:var(--carbs);}
+.entry-macros .f{color:var(--fat);}
+.entry-kcal{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;flex-shrink:0;}
+.entry-del{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:2px 4px;flex-shrink:0;line-height:1;}
+.entry-del:hover{color:var(--over);}
+.empty{text-align:center;color:var(--muted);font-size:13px;padding:30px 10px;border:1px dashed var(--line);border-radius:12px;line-height:1.7;}
+.no-match-box{background:rgba(217,107,90,.08);border:1px solid rgba(217,107,90,.3);border-radius:10px;padding:12px 14px;margin-bottom:10px;font-size:12.5px;color:#f0a396;}
+.no-match-box ul{margin:6px 0 0 18px;}
+.no-match-box li{margin-bottom:2px;}
+.no-match-box a{color:var(--carbs);cursor:pointer;text-decoration:underline;}
+.section-toggle{text-align:center;margin-top:22px;}
+.section-toggle button{background:none;border:none;color:var(--muted);font-size:11.5px;text-decoration:underline;cursor:pointer;font-family:'Inter',sans-serif;}
+/* Browse panel */
+.browse-panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:10px;display:none;}
+.browse-panel.open{display:block;}
+.browse-search{width:100%;background:var(--surface-2);border:1px solid var(--line);color:var(--text);font-family:'Inter',sans-serif;font-size:13px;padding:9px 12px;border-radius:8px;outline:none;margin-bottom:10px;}
+.browse-search::placeholder{color:var(--muted);}
+.browse-search:focus{border-color:var(--carbs);}
+.browse-list{display:flex;flex-direction:column;gap:4px;max-height:260px;overflow-y:auto;}
+.browse-item{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-radius:7px;cursor:pointer;border:1px solid transparent;}
+.browse-item:hover{background:var(--surface-2);border-color:var(--line);}
+.browse-item-name{font-size:13px;}
+.browse-item-srv{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted);}
+.browse-item-kcal{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--protein);}
+/* Manual modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px;}
+.modal-overlay.hidden{display:none;}
+.modal{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px;width:100%;max-width:380px;}
+.modal h2{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;margin-bottom:14px;}
+.modal label{font-size:11px;color:var(--muted);display:block;margin-bottom:4px;margin-top:10px;}
+.modal label:first-of-type{margin-top:0;}
+.modal input{width:100%;background:var(--surface-2);border:1px solid var(--line);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;padding:9px 10px;border-radius:7px;outline:none;}
+.modal input:focus{border-color:var(--protein);}
+.modal-actions{display:flex;gap:8px;margin-top:16px;}
+.modal-save{flex:1;background:var(--protein);color:#1c1500;border:none;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;padding:10px;border-radius:8px;cursor:pointer;}
+.modal-save:hover{background:#f0b355;}
+.modal-cancel{background:none;border:1px solid var(--line);color:var(--muted);font-family:'Inter',sans-serif;font-size:13px;padding:10px 14px;border-radius:8px;cursor:pointer;}
+/* Targets panel */
+.targets-panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:10px;display:none;gap:10px;grid-template-columns:1fr 1fr;}
+.targets-panel.open{display:grid;}
+.targets-panel label{font-size:11px;color:var(--muted);display:block;margin-bottom:4px;}
+.targets-panel input{width:100%;background:var(--surface-2);border:1px solid var(--line);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;padding:7px 8px;border-radius:6px;outline:none;}
+.targets-panel .save-targets{grid-column:1/-1;background:var(--protein);border:none;color:#1c1500;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:12.5px;padding:8px;border-radius:6px;cursor:pointer;margin-top:4px;}
 </style>
 </head>
 <body>
-
-<!-- API Key Modal -->
-<div class="modal-overlay" id="keyModal">
+<!-- Manual entry modal -->
+<div class="modal-overlay hidden" id="manualModal">
   <div class="modal">
-    <h2>Enter your API key</h2>
-    <p>This tracker uses Claude to estimate macros. Grab your key from <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a> and paste it below.</p>
-    <input type="password" id="keyInput" placeholder="sk-ant-..." />
+    <h2>Add manually</h2>
+    <label>Food name</label>
+    <input type="text" id="mName" placeholder="e.g. Protein bar"/>
+    <label>Calories (kcal)</label>
+    <input type="number" id="mKcal" placeholder="200"/>
+    <label>Protein (g)</label>
+    <input type="number" id="mProtein" placeholder="20"/>
+    <label>Carbs (g)</label>
+    <input type="number" id="mCarbs" placeholder="25"/>
+    <label>Fat (g)</label>
+    <input type="number" id="mFat" placeholder="7"/>
     <div class="modal-actions">
-      <button class="modal-save" id="keySave">Save & continue</button>
-      <button class="modal-cancel" id="keyCancel">Cancel</button>
+      <button class="modal-save" id="mSave">Add to log</button>
+      <button class="modal-cancel" id="mCancel">Cancel</button>
     </div>
-    <p class="modal-note">🔒 Stored only in your browser's localStorage — never sent anywhere except the Anthropic API.</p>
   </div>
 </div>
 
@@ -116,19 +129,19 @@
       <div class="date" id="dateLabel"></div>
     </div>
     <div class="top-actions">
-      <button class="key-btn" id="keyBtn">API key</button>
-      <button class="reset-btn" id="resetBtn">Reset day</button>
+      <button class="btn-sm" id="manualBtn">+ Manual</button>
+      <button class="btn-sm" id="resetBtn">Reset day</button>
     </div>
   </div>
-  <div id="errorSlot"></div>
+
   <div class="hero">
     <div class="ring-wrap">
       <svg width="104" height="104">
-        <circle class="ring-bg" cx="52" cy="52" r="44"></circle>
-        <circle class="ring-fg" id="ringFg" cx="52" cy="52" r="44" stroke-dasharray="276.5" stroke-dashoffset="276.5"></circle>
+        <circle class="ring-bg" cx="52" cy="52" r="44"/>
+        <circle class="ring-fg" id="ringFg" cx="52" cy="52" r="44" stroke-dasharray="276.5" stroke-dashoffset="276.5"/>
       </svg>
       <div class="ring-center">
-        <div class="kcal" id="kcalNow">0</div>
+        <div class="kcal-num" id="kcalNow">0</div>
         <div class="lbl">kcal</div>
       </div>
     </div>
@@ -137,6 +150,7 @@
       <div class="sub" id="kcalSub">Log your first meal to start tracking.</div>
     </div>
   </div>
+
   <div class="macros">
     <div class="macro-row">
       <div class="macro-top">
@@ -160,67 +174,321 @@
       <div class="bar-track"><div class="bar-fill" id="fatBar" style="width:0%;background:var(--fat)"></div></div>
     </div>
   </div>
-  <div class="log-input">
-    <input type="text" id="foodInput" placeholder="e.g. 2 rotis, dal, 150g chicken breast" />
-    <button id="logBtn">Log</button>
+
+  <div class="log-area">
+    <div class="log-row">
+      <input type="text" id="foodInput" placeholder="e.g. 3 eggs, 2 rotis, 150g chicken breast"/>
+      <button class="log-btn" id="logBtn">Log</button>
+    </div>
+    <div class="hint">Separate multiple foods with commas. Use <span>2 rotis</span> <span>150g chicken</span> <span>1 bowl dal</span> <span>1 scoop whey</span></div>
   </div>
+
+  <div id="noMatchSlot"></div>
   <div class="feed" id="feed">
-    <div class="empty" id="emptyState">Nothing logged yet — add your first meal above.</div>
+    <div class="empty" id="emptyState">Nothing logged yet.<br>Type what you ate above and hit Log.</div>
   </div>
-  <div class="targets-toggle">
+
+  <div class="section-toggle" style="margin-top:18px;">
+    <button id="browseToggle">Browse food database</button>
+    <div class="browse-panel" id="browsePanel">
+      <input class="browse-search" id="browseSearch" placeholder="Search foods…"/>
+      <div class="browse-list" id="browseList"></div>
+    </div>
+  </div>
+
+  <div class="section-toggle">
     <button id="targetsToggle">Edit daily targets</button>
     <div class="targets-panel" id="targetsPanel">
-      <div><label>Calories</label><input type="number" id="tKcal" value="2100" /></div>
-      <div><label>Protein (g)</label><input type="number" id="tProtein" value="130" /></div>
-      <div><label>Carbs (g)</label><input type="number" id="tCarbs" value="280" /></div>
-      <div><label>Fat (g)</label><input type="number" id="tFat" value="51" /></div>
+      <div><label>Calories</label><input type="number" id="tKcal" value="2100"/></div>
+      <div><label>Protein (g)</label><input type="number" id="tProtein" value="130"/></div>
+      <div><label>Carbs (g)</label><input type="number" id="tCarbs" value="280"/></div>
+      <div><label>Fat (g)</label><input type="number" id="tFat" value="51"/></div>
       <button class="save-targets" id="saveTargets">Save targets</button>
     </div>
   </div>
 </div>
 
 <script>
-const RING_CIRC = 276.5;
+/* =========================================================
+   NUTRITION DATABASE  (per 100g unless noted)
+   cal=kcal  p=protein  c=carbs  f=fat
+   srv = serving sizes in grams per unit
+========================================================= */
+const DB = [
+  // --- ROTIS & BREAD ---
+  {id:'roti',name:'Roti / Chapati',kw:['roti','chapati','chappati','phulka','fulka','wheat roti','chapatti'],
+   cal:297,p:9,c:55,f:4, srv:{piece:35,default:'piece'}},
+  {id:'paratha',name:'Plain Paratha',kw:['paratha','parantha','parathe','parata','plain paratha'],
+   cal:320,p:7,c:48,f:12, srv:{piece:70,default:'piece'}},
+  {id:'aloo_paratha',name:'Aloo Paratha',kw:['aloo paratha','potato paratha','stuffed paratha'],
+   cal:350,p:7,c:48,f:15, srv:{piece:100,default:'piece'}},
+  {id:'puri',name:'Puri',kw:['puri','poori','puri'],
+   cal:325,p:7,c:43,f:14, srv:{piece:30,default:'piece'}},
+  {id:'bread_white',name:'White Bread',kw:['bread','white bread','bread slice','sandwich bread'],
+   cal:265,p:9,c:51,f:3.2, srv:{slice:30,piece:30,default:'slice'}},
+  {id:'bread_brown',name:'Brown / Whole Wheat Bread',kw:['brown bread','whole wheat bread','multigrain bread','atta bread','wholewheat bread'],
+   cal:247,p:12,c:43,f:3.5, srv:{slice:30,piece:30,default:'slice'}},
+  {id:'pav',name:'Pav / Dinner Roll',kw:['pav','bun','dinner roll','ladi pav'],
+   cal:280,p:8,c:52,f:4, srv:{piece:45,default:'piece'}},
+
+  // --- RICE & GRAINS ---
+  {id:'rice',name:'Rice (cooked)',kw:['rice','chawal','cooked rice','steamed rice','white rice','boiled rice','jeera rice','plain rice'],
+   cal:130,p:2.7,c:28,f:0.3, srv:{bowl:200,cup:180,plate:250,katori:150,default:'bowl'}},
+  {id:'brown_rice',name:'Brown Rice (cooked)',kw:['brown rice','unpolished rice'],
+   cal:123,p:2.7,c:25.6,f:1, srv:{bowl:200,cup:180,default:'bowl'}},
+  {id:'oats',name:'Oats (dry)',kw:['oats','oatmeal','rolled oats','quaker','oats dry'],
+   cal:389,p:17,c:66,f:7, srv:{cup:80,bowl:80,default:'cup'}},
+  {id:'oats_cooked',name:'Oats (cooked)',kw:['oats cooked','cooked oatmeal','oat porridge','overnight oats'],
+   cal:71,p:2.5,c:12,f:1.5, srv:{bowl:250,cup:200,default:'bowl'}},
+  {id:'poha',name:'Poha',kw:['poha','aval','beaten rice','flattened rice','pohe'],
+   cal:180,p:2.5,c:35,f:4, srv:{plate:150,bowl:150,cup:120,default:'plate'}},
+  {id:'upma',name:'Upma',kw:['upma','rava upma','semolina upma','suji upma'],
+   cal:160,p:3.2,c:28,f:4.5, srv:{plate:150,bowl:150,default:'plate'}},
+  {id:'khichdi',name:'Khichdi',kw:['khichdi','khichri','dal khichdi','rice dal'],
+   cal:120,p:5,c:20,f:2.5, srv:{bowl:200,plate:300,default:'bowl'}},
+  {id:'idli',name:'Idli',kw:['idli','idly'],
+   cal:58,p:2,c:12,f:0.1, srv:{piece:40,default:'piece'}},
+  {id:'dosa',name:'Dosa',kw:['dosa','dosai','dose','plain dosa','masala dosa'],
+   cal:168,p:3.9,c:24,f:6.4, srv:{piece:80,default:'piece'}},
+  {id:'uttapam',name:'Uttapam',kw:['uttapam','utthapam','uthappam'],
+   cal:178,p:4.5,c:28,f:6, srv:{piece:100,default:'piece'}},
+
+  // --- PROTEINS: CHICKEN ---
+  {id:'chicken_breast',name:'Chicken Breast (cooked)',kw:['chicken breast','grilled chicken','boiled chicken','baked chicken','chicken breast grilled','roasted chicken breast'],
+   cal:165,p:31,c:0,f:3.6, srv:{piece:150,default:'piece'}},
+  {id:'chicken',name:'Chicken (cooked)',kw:['chicken','murgi','murga','chicken curry','chicken piece','chicken thigh','chicken leg','chicken gravy'],
+   cal:215,p:26,c:0,f:12, srv:{piece:100,bowl:200,katori:150,default:'piece'}},
+  {id:'biryani',name:'Chicken Biryani',kw:['biryani','biriyani','chicken biryani','mutton biryani','veg biryani','hyderabadi biryani'],
+   cal:200,p:12,c:28,f:5, srv:{plate:350,bowl:250,default:'plate'}},
+
+  // --- PROTEINS: EGGS ---
+  {id:'egg',name:'Whole Egg',kw:['egg','anda','whole egg','boiled egg','scrambled egg','omelette','omelet','fried egg','egg bhurji','poached egg','half fry','bull eye'],
+   cal:155,p:13,c:1.1,f:11, srv:{piece:50,default:'piece'}},
+  {id:'egg_white',name:'Egg White',kw:['egg white','egg whites'],
+   cal:52,p:11,c:0.7,f:0.2, srv:{piece:33,default:'piece'}},
+
+  // --- PROTEINS: FISH & SEAFOOD ---
+  {id:'fish',name:'Fish (cooked)',kw:['fish','machli','macchi','rohu','surmai','pomfret','tilapia','salmon','tuna','fish curry','basa','catfish'],
+   cal:90,p:17,c:0,f:2.7, srv:{piece:100,bowl:150,default:'piece'}},
+  {id:'prawn',name:'Prawns / Shrimp (cooked)',kw:['prawn','shrimp','jhinga','prawn curry','shrimps'],
+   cal:99,p:24,c:0,f:0.3, srv:{bowl:150,default:'bowl'}},
+
+  // --- PROTEINS: MUTTON ---
+  {id:'mutton',name:'Mutton (cooked)',kw:['mutton','lamb','goat','mutton curry','mutton piece','keema'],
+   cal:294,p:25,c:0,f:21, srv:{piece:100,bowl:200,default:'piece'}},
+
+  // --- PROTEINS: PANEER ---
+  {id:'paneer',name:'Paneer',kw:['paneer','cottage cheese','paneer curry','palak paneer','paneer bhurji','paneer tikka','shahi paneer','paneer sabzi'],
+   cal:265,p:18,c:1.2,f:20, srv:{katori:100,cup:200,bowl:150,piece:30,default:'katori'}},
+
+  // --- PROTEINS: LENTILS & PULSES ---
+  {id:'dal',name:'Dal (cooked)',kw:['dal','daal','lentils','toor dal','moong dal','masoor dal','dal tadka','dal fry','dal makhani','yellow dal','red lentil','chana dal'],
+   cal:116,p:9,c:20,f:0.4, srv:{bowl:200,katori:150,cup:180,default:'bowl'}},
+  {id:'rajma',name:'Rajma / Kidney Beans (cooked)',kw:['rajma','kidney beans','red beans','rajma chawal'],
+   cal:127,p:8.7,c:22,f:0.5, srv:{bowl:200,katori:150,default:'bowl'}},
+  {id:'chole',name:'Chole / Chickpeas (cooked)',kw:['chole','chana','chickpea','chhole','kala chana','kabuli chana','chole curry','pindi chole'],
+   cal:164,p:8.9,c:27,f:2.6, srv:{bowl:200,katori:150,default:'bowl'}},
+  {id:'sambar',name:'Sambar',kw:['sambar','sambhar'],
+   cal:68,p:3.5,c:9,f:2, srv:{bowl:200,katori:150,default:'bowl'}},
+  {id:'sprouts',name:'Mixed Sprouts',kw:['sprouts','moong sprouts','mixed sprouts','sprouted moong'],
+   cal:30,p:3,c:4,f:0.2, srv:{bowl:100,katori:80,default:'bowl'}},
+
+  // --- PROTEIN SUPPLEMENTS ---
+  {id:'whey',name:'Whey Protein',kw:['whey','whey protein','protein shake','protein powder','protein scoop','isolate'],
+   cal:120,p:24,c:3,f:2, srv:{scoop:30,default:'scoop'}},
+  {id:'protein_bar',name:'Protein Bar',kw:['protein bar','bar','quest bar','kind bar'],
+   cal:200,p:20,c:20,f:7, srv:{piece:60,default:'piece'}},
+
+  // --- DAIRY ---
+  {id:'milk',name:'Milk (full fat)',kw:['milk','full fat milk','whole milk','dudh','full cream milk','buffalo milk'],
+   cal:61,p:3.2,c:4.7,f:3.3, srv:{glass:250,cup:240,default:'glass'}},
+  {id:'milk_toned',name:'Milk (toned/low fat)',kw:['toned milk','low fat milk','skimmed milk','slim milk','amul toned'],
+   cal:47,p:3.5,c:5,f:1.5, srv:{glass:250,cup:240,default:'glass'}},
+  {id:'curd',name:'Curd / Yogurt',kw:['curd','dahi','yogurt','yoghurt','greek yogurt','hung curd'],
+   cal:98,p:3.5,c:3.4,f:4.3, srv:{cup:200,bowl:200,katori:150,default:'cup'}},
+  {id:'paneer_low',name:'Low Fat Paneer',kw:['low fat paneer','skimmed milk paneer','diet paneer'],
+   cal:160,p:18,c:2,f:8, srv:{katori:100,default:'katori'}},
+  {id:'cheese',name:'Cheese',kw:['cheese','processed cheese','cheese slice','cheddar'],
+   cal:402,p:25,c:1.3,f:33, srv:{slice:25,piece:25,default:'slice'}},
+
+  // --- VEGETABLES ---
+  {id:'sabzi',name:'Mixed Vegetable Sabzi',kw:['sabzi','subzi','sabji','mixed veg','vegetable curry','veggies','bhaji','veg curry'],
+   cal:80,p:3,c:12,f:2.5, srv:{katori:150,bowl:200,default:'katori'}},
+  {id:'potato',name:'Potato (boiled)',kw:['potato','aloo boiled','boiled potato','aloo','batata'],
+   cal:87,p:1.9,c:20,f:0.1, srv:{piece:150,default:'piece'}},
+  {id:'aloo_sabzi',name:'Aloo Sabzi',kw:['aloo sabzi','aloo bhaji','potato sabzi','aloo gobi','potato curry'],
+   cal:150,p:2.5,c:20,f:6, srv:{katori:150,bowl:200,default:'katori'}},
+  {id:'salad',name:'Mixed Salad',kw:['salad','green salad','vegetable salad','cucumber salad','tossed salad'],
+   cal:25,p:1.5,c:5,f:0.2, srv:{bowl:200,plate:200,default:'bowl'}},
+  {id:'palak',name:'Palak / Spinach (cooked)',kw:['palak','spinach','palak sabzi','saag'],
+   cal:40,p:3,c:4,f:1, srv:{katori:150,bowl:150,default:'katori'}},
+
+  // --- FRUITS ---
+  {id:'banana',name:'Banana',kw:['banana','kela'],
+   cal:89,p:1.1,c:23,f:0.3, srv:{piece:120,default:'piece'}},
+  {id:'apple',name:'Apple',kw:['apple','seb'],
+   cal:52,p:0.3,c:14,f:0.2, srv:{piece:180,default:'piece'}},
+  {id:'orange',name:'Orange',kw:['orange','narangi','santra','mosambi'],
+   cal:47,p:0.9,c:12,f:0.1, srv:{piece:150,default:'piece'}},
+  {id:'mango',name:'Mango',kw:['mango','aam'],
+   cal:60,p:0.8,c:15,f:0.4, srv:{piece:200,cup:165,default:'piece'}},
+  {id:'papaya',name:'Papaya',kw:['papaya','papita'],
+   cal:43,p:0.5,c:11,f:0.3, srv:{bowl:200,piece:300,default:'bowl'}},
+
+  // --- FATS & OILS ---
+  {id:'ghee',name:'Ghee',kw:['ghee','clarified butter','desi ghee'],
+   cal:900,p:0,c:0,f:100, srv:{tsp:5,tbsp:15,default:'tsp'}},
+  {id:'oil',name:'Cooking Oil',kw:['oil','olive oil','sunflower oil','mustard oil','coconut oil','vegetable oil','refined oil'],
+   cal:884,p:0,c:0,f:100, srv:{tsp:5,tbsp:15,default:'tsp'}},
+  {id:'butter',name:'Butter',kw:['butter','makhan','amul butter'],
+   cal:717,p:0.9,c:0.1,f:81, srv:{tsp:5,tbsp:14,default:'tsp'}},
+  {id:'peanut_butter',name:'Peanut Butter',kw:['peanut butter','pb'],
+   cal:588,p:25,c:20,f:50, srv:{tbsp:16,tsp:8,default:'tbsp'}},
+
+  // --- NUTS & SEEDS ---
+  {id:'almonds',name:'Almonds',kw:['almond','badam','almonds'],
+   cal:579,p:21,c:22,f:50, srv:{piece:1.2,default:'piece'}},
+  {id:'peanuts',name:'Peanuts',kw:['peanut','groundnut','moongphali','peanuts'],
+   cal:567,p:26,c:16,f:49, srv:{handful:30,cup:146,default:'handful'}},
+  {id:'cashew',name:'Cashews',kw:['cashew','kaju','cashews'],
+   cal:553,p:18,c:30,f:44, srv:{piece:3,handful:30,default:'piece'}},
+
+  // --- DRINKS ---
+  {id:'tea',name:'Chai / Tea (with milk & sugar)',kw:['tea','chai','chay','masala chai','cutting chai'],
+   cal:45,p:1.5,c:7,f:1.3, srv:{cup:150,glass:200,default:'cup'}},
+  {id:'coffee_black',name:'Black Coffee',kw:['black coffee','coffee black','espresso','americano','filter coffee'],
+   cal:5,p:0.3,c:0,f:0, srv:{cup:240,default:'cup'}},
+  {id:'coffee_milk',name:'Coffee with Milk',kw:['coffee with milk','latte','cappuccino','cafe latte','cafe coffee'],
+   cal:55,p:2.7,c:5,f:2.5, srv:{cup:200,glass:250,default:'cup'}},
+  {id:'protein_shake',name:'Protein Shake (with milk)',kw:['protein shake','shake','chocolate shake','vanilla shake'],
+   cal:250,p:28,c:22,f:5, srv:{glass:400,default:'glass'}},
+
+  // --- MISC ---
+  {id:'vada',name:'Medu Vada',kw:['vada','wada','medu vada','urad vada'],
+   cal:322,p:8.5,c:38,f:15, srv:{piece:50,default:'piece'}},
+  {id:'samosa',name:'Samosa',kw:['samosa','samosa'],
+   cal:308,p:5,c:35,f:17, srv:{piece:100,default:'piece'}},
+  {id:'dhokla',name:'Dhokla',kw:['dhokla','dhokra'],
+   cal:160,p:5,c:28,f:3, srv:{piece:50,default:'piece'}},
+];
+
+/* =========================================================
+   PARSER + MATCHER
+========================================================= */
+const UNIT_NAMES = ['kg','g','ml','l','piece','pieces','pcs','slice','slices',
+  'bowl','bowls','cup','cups','glass','glasses','plate','plates','katori',
+  'tbsp','tablespoon','tablespoons','tsp','teaspoon','teaspoons',
+  'scoop','scoops','handful','handfuls','serving','servings'];
+
+function parseItem(raw){
+  let text = raw.trim().toLowerCase().replace(/\bhalf\b/g,'0.5').replace(/\bhalf-\b/g,'0.5');
+  let qty=1, unit=null, foodText=text;
+
+  // "150g chicken" or "150 g chicken"
+  const wm = text.match(/^([\d.]+)\s*(g|kg|ml|l)\s+(.+)$/i);
+  if(wm){ qty=parseFloat(wm[1]); unit=wm[2].toLowerCase(); foodText=wm[3]; }
+  else {
+    const up = new RegExp('^([\\d.]+)\\s+(' + UNIT_NAMES.join('|') + ')\\s+(.+)$','i');
+    const um = text.match(up);
+    if(um){ qty=parseFloat(um[1]); unit=um[2].toLowerCase(); foodText=um[3]; }
+    else {
+      const qm = text.match(/^([\d.]+)\s+(.+)$/);
+      if(qm){ qty=parseFloat(qm[1]); foodText=qm[2]; }
+    }
+  }
+
+  // Normalize units
+  const norm = {pieces:'piece',pcs:'piece',slices:'slice',bowls:'bowl',
+    cups:'cup',glasses:'glass',plates:'plate',
+    tablespoon:'tbsp',tablespoons:'tbsp',
+    teaspoon:'tsp',teaspoons:'tsp',
+    scoops:'scoop',handfuls:'handful',
+    servings:'serving',g:'g',kg:'kg',ml:'ml',l:'l'};
+  if(unit && norm[unit]) unit=norm[unit];
+
+  return {qty, unit, foodText: foodText.replace(/\b(boiled|fried|grilled|steamed|baked|raw|cooked|fresh|roasted|scrambled|poached)\b/g,'').trim()};
+}
+
+function matchFood(foodText){
+  foodText = foodText.toLowerCase().trim();
+  let best=null, bestScore=0;
+  for(const food of DB){
+    let score=0;
+    for(const kw of food.kw){
+      if(foodText===kw){ score=Math.max(score,100); break; }
+      if(foodText.includes(kw)){ score=Math.max(score,85); }
+      else if(kw.includes(foodText)){ score=Math.max(score,75); }
+      else {
+        const fw=foodText.split(/\s+/), kw2=kw.split(/\s+/);
+        const hits=fw.filter(w=>w.length>2&&kw2.some(k=>k.includes(w)||w.includes(k))).length;
+        if(hits>0) score=Math.max(score,25+hits*20);
+      }
+    }
+    if(score>bestScore){ bestScore=score; best=food; }
+  }
+  return bestScore>=30 ? {food:best, score:bestScore} : null;
+}
+
+function calcMacros(food, qty, unit){
+  let grams;
+  if(!unit){ unit=food.srv.default; }
+  if(unit==='g'){ grams=qty; }
+  else if(unit==='kg'){ grams=qty*1000; }
+  else if(unit==='ml'||unit==='l'){ grams=unit==='l'?qty*1000:qty; }
+  else {
+    const sg = food.srv[unit] || food.srv[food.srv.default] || 100;
+    grams = qty * sg;
+  }
+  const f=grams/100;
+  return {
+    calories: Math.round(food.cal*f),
+    protein:  Math.round(food.p*f*10)/10,
+    carbs:    Math.round(food.c*f*10)/10,
+    fat:      Math.round(food.f*f*10)/10,
+    grams:    Math.round(grams)
+  };
+}
+
+function servingLabel(food){
+  const u=food.srv.default;
+  const g=food.srv[u];
+  return `per ${u} (~${g}g)`;
+}
+
+/* =========================================================
+   APP STATE & STORAGE
+========================================================= */
+const RING=276.5;
 function todayKey(){ return new Date().toISOString().slice(0,10); }
+let targets={kcal:2100,protein:130,carbs:280,fat:51};
+let entries=[];
+const el=id=>document.getElementById(id);
 
-let targets = { kcal:2100, protein:130, carbs:280, fat:51 };
-let entries = [];
-const el = id => document.getElementById(id);
+function save(){ localStorage.setItem('macro-log-'+todayKey(),JSON.stringify(entries)); }
+function load(){
+  try{ const r=localStorage.getItem('macro-log-'+todayKey()); entries=r?JSON.parse(r):[]; }catch{ entries=[]; }
+  try{ const t=localStorage.getItem('macro-targets'); if(t){ targets=JSON.parse(t); el('tKcal').value=targets.kcal; el('tProtein').value=targets.protein; el('tCarbs').value=targets.carbs; el('tFat').value=targets.fat; } }catch{}
+  render();
+}
 
-/* ── API Key Modal ── */
-function getKey(){ return localStorage.getItem('anthropic-api-key') || ''; }
-function setKey(k){ localStorage.setItem('anthropic-api-key', k.trim()); }
-function showKeyModal(){ el('keyModal').classList.remove('hidden'); el('keyInput').value=getKey(); el('keyInput').focus(); }
-function hideKeyModal(){ el('keyModal').classList.add('hidden'); }
-
-el('keySave').addEventListener('click', ()=>{
-  const k = el('keyInput').value.trim();
-  if(!k){ alert('Please enter a key.'); return; }
-  setKey(k); hideKeyModal();
-});
-el('keyCancel').addEventListener('click', hideKeyModal);
-el('keyBtn').addEventListener('click', showKeyModal);
-el('keyInput').addEventListener('keydown', e=>{ if(e.key==='Enter') el('keySave').click(); });
-
-if(!getKey()) showKeyModal();
-
-/* ── Utils ── */
-function fmtTime(iso){ return new Date(iso).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false}); }
+/* =========================================================
+   RENDER
+========================================================= */
 function totals(){ return entries.reduce((a,e)=>({kcal:a.kcal+e.calories,protein:a.protein+e.protein,carbs:a.carbs+e.carbs,fat:a.fat+e.fat}),{kcal:0,protein:0,carbs:0,fat:0}); }
-function escHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function esc(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function fmtT(iso){ return new Date(iso).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false}); }
 
-/* ── Render ── */
 function render(){
   const t=totals();
   el('kcalNow').textContent=Math.round(t.kcal);
   el('kcalHeadline').textContent=`${Math.round(t.kcal).toLocaleString()} of ${targets.kcal.toLocaleString()} kcal`;
   const pct=Math.min(t.kcal/targets.kcal,1);
   const ring=el('ringFg');
-  ring.style.strokeDashoffset=RING_CIRC-RING_CIRC*pct;
+  ring.style.strokeDashoffset=RING-RING*pct;
   ring.style.stroke=t.kcal>targets.kcal?'var(--over)':'var(--good)';
   const rem=targets.kcal-t.kcal;
   el('kcalSub').innerHTML=entries.length===0?'Log your first meal to start tracking.'
-    :(rem>=0?`<b>${Math.round(rem).toLocaleString()}</b> kcal left today`:`<b>${Math.round(-rem).toLocaleString()}</b> kcal over target`);
+    :(rem>=0?`<b>${Math.round(rem).toLocaleString()}</b> kcal remaining`:`<b>${Math.round(-rem).toLocaleString()}</b> kcal over target`);
   setMacro('protein',t.protein,targets.protein);
   setMacro('carbs',t.carbs,targets.carbs);
   setMacro('fat',t.fat,targets.fat);
@@ -230,10 +498,10 @@ function render(){
   renderFeed();
 }
 
-function setMacro(name,now,target){
-  el(name+'Now').textContent=Math.round(now);
-  el(name+'Bar').style.width=Math.min((now/target)*100,100)+'%';
-  el(name+'Bar').style.background=now>target?'var(--over)':`var(--${name})`;
+function setMacro(n,now,target){
+  el(n+'Now').textContent=Math.round(now);
+  el(n+'Bar').style.width=Math.min((now/target)*100,100)+'%';
+  el(n+'Bar').style.background=now>target?'var(--over)':`var(--${n})`;
 }
 
 function renderFeed(){
@@ -243,9 +511,9 @@ function renderFeed(){
     const div=document.createElement('div');
     div.className='entry';
     div.innerHTML=`
-      <div class="entry-time">${fmtTime(e.loggedAt)}</div>
+      <div class="entry-time">${fmtT(e.loggedAt)}</div>
       <div class="entry-body">
-        <div class="entry-name">${escHtml(e.name)}</div>
+        <div class="entry-name">${esc(e.name)}</div>
         <div class="entry-macros">
           <span class="p">P ${Math.round(e.protein)}g</span>
           <span class="c">C ${Math.round(e.carbs)}g</span>
@@ -257,88 +525,109 @@ function renderFeed(){
     el('feed').appendChild(div);
   });
   el('feed').querySelectorAll('.entry-del').forEach(b=>{
-    b.addEventListener('click',()=>removeEntry(b.dataset.id));
+    b.addEventListener('click',()=>{ entries=entries.filter(e=>e.id!==b.dataset.id); save(); render(); });
   });
 }
 
-/* ── Storage ── */
-function save(){ localStorage.setItem('macro-log-'+todayKey(),JSON.stringify(entries)); }
-function load(){
-  try{ const r=localStorage.getItem('macro-log-'+todayKey()); entries=r?JSON.parse(r):[]; }catch{ entries=[]; }
-  try{ const t=localStorage.getItem('macro-targets'); if(t){ targets=JSON.parse(t); el('tKcal').value=targets.kcal; el('tProtein').value=targets.protein; el('tCarbs').value=targets.carbs; el('tFat').value=targets.fat; } }catch{}
-  render();
-}
-function removeEntry(id){ entries=entries.filter(e=>e.id!==id); save(); render(); }
-
-/* ── API ── */
-function showError(msg){ el('errorSlot').innerHTML=`<div class="error-box">${escHtml(msg)}</div>`; setTimeout(()=>{ el('errorSlot').innerHTML=''; },7000); }
-
-async function estimateMacros(desc){
-  const key=getKey();
-  if(!key){ showKeyModal(); throw new Error('No API key'); }
-  const res=await fetch("https://api.anthropic.com/v1/messages",{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "x-api-key": key,
-      "anthropic-version":"2023-06-01",
-      "anthropic-dangerous-direct-browser-access":"true"
-    },
-    body:JSON.stringify({
-      model:"claude-haiku-4-5-20251001",max_tokens:512,
-      system:"You are a nutrition estimation engine. Respond with ONLY a raw JSON object — no markdown, no preamble, no explanation. Format exactly: {\"name\":\"short clean label\",\"calories\":number,\"protein\":number,\"carbs\":number,\"fat\":number}. Use kcal for calories, grams for macros. Assume typical Indian home-cooked portions unless quantities are stated.",
-      messages:[{role:"user",content:desc}]
-    })
-  });
-  if(!res.ok){
-    const err=await res.json().catch(()=>({}));
-    if(res.status===401){ showKeyModal(); throw new Error('Invalid API key'); }
-    throw new Error(err.error?.message||`API error ${res.status}`);
-  }
-  const data=await res.json();
-  const block=(data.content||[]).find(b=>b.type==='text');
-  if(!block) throw new Error('Empty response');
-  const parsed=JSON.parse(block.text.replace(/```json|```/g,'').trim());
-  if(typeof parsed.calories!=='number') throw new Error('Bad format');
-  return parsed;
+/* =========================================================
+   LOG HANDLER
+========================================================= */
+function addEntry(name,calories,protein,carbs,fat){
+  entries.push({id:'e'+Date.now()+Math.random().toString(36).slice(2,5),name,calories,protein,carbs,fat,loggedAt:new Date().toISOString()});
+  save(); render();
 }
 
-/* ── Log handler ── */
-async function handleLog(){
+function handleLog(){
   const input=el('foodInput');
-  const desc=input.value.trim();
-  if(!desc)return;
-  if(!getKey()){ showKeyModal(); return; }
-  const btn=el('logBtn');
-  btn.disabled=true; input.disabled=true;
-  const loader=document.createElement('div');
-  loader.className='loading-entry';
-  loader.innerHTML=`<div class="spinner"></div> Estimating macros…`;
-  el('emptyState').style.display='none';
-  el('feed').prepend(loader);
-  try{
-    const est=await estimateMacros(desc);
-    entries.push({
-      id:'e'+Date.now()+Math.random().toString(36).slice(2,6),
-      name:est.name||desc,
-      calories:est.calories,protein:est.protein||0,
-      carbs:est.carbs||0,fat:est.fat||0,
-      loggedAt:new Date().toISOString()
-    });
-    save(); input.value=''; render();
-  }catch(err){
-    if(err.message!=='No API key'&&err.message!=='Invalid API key')
-      showError(`Couldn't estimate: ${err.message}. Try being more specific, e.g. "2 boiled eggs, 1 cup cooked rice".`);
-    render();
-  }finally{
-    loader.remove(); btn.disabled=false; input.disabled=false; input.focus();
+  const raw=input.value.trim();
+  if(!raw) return;
+
+  const items=raw.split(',').map(s=>s.trim()).filter(Boolean);
+  const unmatched=[];
+
+  for(const item of items){
+    const parsed=parseItem(item);
+    const match=matchFood(parsed.foodText);
+    if(match){
+      const m=calcMacros(match.food,parsed.qty,parsed.unit);
+      const label=`${match.food.name}${parsed.qty!==1?` ×${parsed.qty}`:''}`;
+      addEntry(label,m.calories,m.protein,m.carbs,m.fat);
+    } else {
+      unmatched.push(item);
+    }
   }
+
+  if(unmatched.length){
+    el('noMatchSlot').innerHTML=`<div class="no-match-box">
+      ⚠️ Couldn't match: <ul>${unmatched.map(u=>`<li>"${esc(u)}" — <a onclick="openManualPrefilled('${esc(u)}')">add manually</a> or check the food database below</li>`).join('')}</ul>
+    </div>`;
+    setTimeout(()=>{ el('noMatchSlot').innerHTML=''; },12000);
+  } else {
+    el('noMatchSlot').innerHTML='';
+  }
+
+  input.value='';
+  input.focus();
 }
 
-/* ── Events ── */
 el('logBtn').addEventListener('click',handleLog);
-el('foodInput').addEventListener('keydown',e=>{if(e.key==='Enter')handleLog();});
+el('foodInput').addEventListener('keydown',e=>{ if(e.key==='Enter') handleLog(); });
 el('resetBtn').addEventListener('click',()=>{ if(confirm("Reset today's log?")){ entries=[]; save(); render(); } });
+
+/* =========================================================
+   MANUAL MODAL
+========================================================= */
+function openManual(){ el('manualModal').classList.remove('hidden'); el('mName').focus(); }
+function openManualPrefilled(name){ openManual(); el('mName').value=name; el('mKcal').focus(); }
+window.openManualPrefilled=openManualPrefilled;
+
+el('manualBtn').addEventListener('click',openManual);
+el('mCancel').addEventListener('click',()=>el('manualModal').classList.add('hidden'));
+el('mSave').addEventListener('click',()=>{
+  const name=el('mName').value.trim();
+  const cal=parseFloat(el('mKcal').value)||0;
+  const p=parseFloat(el('mProtein').value)||0;
+  const c=parseFloat(el('mCarbs').value)||0;
+  const f=parseFloat(el('mFat').value)||0;
+  if(!name||!cal){ alert('Enter at least a name and calories.'); return; }
+  addEntry(name,cal,p,c,f);
+  el('manualModal').classList.add('hidden');
+  ['mName','mKcal','mProtein','mCarbs','mFat'].forEach(id=>{ el(id).value=''; });
+});
+
+/* =========================================================
+   BROWSE PANEL
+========================================================= */
+function renderBrowse(filter=''){
+  const list=el('browseList');
+  list.innerHTML='';
+  const q=filter.toLowerCase();
+  const filtered=DB.filter(f=>!q||f.name.toLowerCase().includes(q)||f.kw.some(k=>k.includes(q)));
+  filtered.forEach(food=>{
+    const srv=food.srv[food.srv.default];
+    const macroAt100=`${Math.round(food.cal)} kcal`;
+    const div=document.createElement('div');
+    div.className='browse-item';
+    div.innerHTML=`<div><div class="browse-item-name">${esc(food.name)}</div><div class="browse-item-srv">per ${food.srv.default} (~${srv}g) · P${food.p}g C${food.c}g F${food.f}g</div></div><div class="browse-item-kcal">${macroAt100}</div>`;
+    div.addEventListener('click',()=>{
+      el('foodInput').value=(el('foodInput').value?el('foodInput').value+', ':'')+'1 '+food.kw[0];
+      el('foodInput').focus();
+      el('browsePanel').classList.remove('open');
+    });
+    list.appendChild(div);
+  });
+  if(!filtered.length) list.innerHTML='<div style="color:var(--muted);font-size:13px;padding:10px">No foods found.</div>';
+}
+
+el('browseToggle').addEventListener('click',()=>{
+  el('browsePanel').classList.toggle('open');
+  if(el('browsePanel').classList.contains('open')){ renderBrowse(); el('browseSearch').focus(); }
+});
+el('browseSearch').addEventListener('input',()=>renderBrowse(el('browseSearch').value));
+
+/* =========================================================
+   TARGETS
+========================================================= */
 el('targetsToggle').addEventListener('click',()=>el('targetsPanel').classList.toggle('open'));
 el('saveTargets').addEventListener('click',()=>{
   targets={kcal:Number(el('tKcal').value)||2100,protein:Number(el('tProtein').value)||130,carbs:Number(el('tCarbs').value)||280,fat:Number(el('tFat').value)||51};
@@ -346,6 +635,9 @@ el('saveTargets').addEventListener('click',()=>{
   render(); el('targetsPanel').classList.remove('open');
 });
 
+/* =========================================================
+   INIT
+========================================================= */
 el('dateLabel').textContent=new Date().toLocaleDateString([],{weekday:'long',month:'short',day:'numeric'});
 load();
 </script>
